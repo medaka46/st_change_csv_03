@@ -38,6 +38,21 @@ github_token = get_secret('GITHUB_TOKEN')
 if not github_token and 'github_token' in st.session_state:
     github_token = st.session_state.github_token
 
+# Get repository owner from secrets or session state
+repo_owner = get_secret('REPO_OWNER')
+if not repo_owner and 'repo_owner' in st.session_state:
+    repo_owner = st.session_state.repo_owner
+
+# Get repository name from secrets or session state  
+repo_name = get_secret('REPO_NAME')
+if not repo_name and 'repo_name' in st.session_state:
+    repo_name = st.session_state.repo_name
+
+# Get file path from secrets or session state
+file_path = get_secret('FILE_PATH')
+if not file_path and 'file_path' in st.session_state:
+    file_path = st.session_state.file_path
+
 st.title("GitHub CSV Editor")
 
 # If token not available in secrets or session, ask user
@@ -164,9 +179,9 @@ def reset_all():
 # Display secrets status
 with st.expander("Secrets Status"):
     st.write("GitHub Token:", "Available ✅" if github_token else "Not set ❌")
-    st.write("Repository Owner:", "Available ✅" if get_secret('REPO_OWNER') else "Not set ❌")
-    st.write("Repository Name:", "Available ✅" if get_secret('REPO_NAME') else "Not set ❌")
-    st.write("CSV File Path:", "Available ✅" if get_secret('FILE_PATH') else "Not set ❌")
+    st.write("Repository Owner:", "Available ✅" if repo_owner else "Not set ❌")
+    st.write("Repository Name:", "Available ✅" if repo_name else "Not set ❌")
+    st.write("CSV File Path:", "Available ✅" if file_path else "Not set ❌")
 
 # Main UI flow
 if github_token:
@@ -192,30 +207,14 @@ if github_token:
     if st.session_state.token_valid:
         st.subheader("Step 2: Test Repository Access")
         
-        # Get repo values from secrets or session state, then fallback to input
-        repo_owner_default = get_secret('REPO_OWNER')
-        repo_name_default = get_secret('REPO_NAME')
-        
-        # Save repo details in session state
-        if 'repo_owner' not in st.session_state and repo_owner_default:
-            st.session_state.repo_owner = repo_owner_default
-        if 'repo_name' not in st.session_state and repo_name_default:
-            st.session_state.repo_name = repo_name_default
-            
-        col1, col2 = st.columns(2)
-        with col1:
-            repo_owner = st.text_input(
-                "Repository Owner:", 
-                value=st.session_state.get('repo_owner', repo_owner_default)
-            )
+        # If repo details not in secrets, ask user
+        if not repo_owner:
+            repo_owner = st.text_input("Repository Owner:")
             if repo_owner:
                 st.session_state.repo_owner = repo_owner
                 
-        with col2:
-            repo_name = st.text_input(
-                "Repository Name:", 
-                value=st.session_state.get('repo_name', repo_name_default)
-            )
+        if not repo_name:
+            repo_name = st.text_input("Repository Name:")
             if repo_name:
                 st.session_state.repo_name = repo_name
         
@@ -236,19 +235,11 @@ if github_token:
         if st.session_state.repo_valid:
             st.subheader("Step 3: Select CSV File")
             
-            # Get file path from secrets or session state, then fallback to input
-            file_path_default = get_secret('FILE_PATH')
-            
-            # Save file path in session state
-            if 'file_path' not in st.session_state and file_path_default:
-                st.session_state.file_path = file_path_default
-                
-            file_path = st.text_input(
-                "CSV File Path:", 
-                value=st.session_state.get('file_path', file_path_default)
-            )
-            if file_path:
-                st.session_state.file_path = file_path
+            # If file path not in secrets, ask user
+            if not file_path:
+                file_path = st.text_input("CSV File Path:")
+                if file_path:
+                    st.session_state.file_path = file_path
             
             if file_path and not st.session_state.file_checked:
                 if st.button("Load CSV File"):
