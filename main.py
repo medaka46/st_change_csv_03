@@ -143,6 +143,18 @@ def save_csv_to_github(repo_owner, repo_name, file_path, df):
     except Exception as e:
         return False, f"Error: {str(e)}"
 
+# Function to download CSV from GitHub
+def download_csv_from_github(repo_owner, repo_name, file_path):
+    file_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
+    response = requests.get(file_url, headers=get_headers())
+    
+    if response.status_code == 200:
+        file_data = response.json()
+        content = base64.b64decode(file_data['content']).decode('utf-8')
+        return content
+    else:
+        return None
+
 # Reset function
 def reset_all():
     for key in list(st.session_state.keys()):
@@ -265,16 +277,31 @@ if github_token:
                         )
                         
                         # Save changes
-                        if st.button("Save Changes to GitHub"):
-                            with st.spinner("Saving changes..."):
-                                success, message = save_csv_to_github(
-                                    repo_owner, repo_name, file_path, edited_df
-                                )
-                                if success:
-                                    st.session_state.csv_data = edited_df  # Update the local data
-                                    st.success(message)
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("Save Changes to GitHub"):
+                                with st.spinner("Saving changes..."):
+                                    success, message = save_csv_to_github(
+                                        repo_owner, repo_name, file_path, edited_df
+                                    )
+                                    if success:
+                                        st.session_state.csv_data = edited_df  # Update the local data
+                                        st.success(message)
+                                    else:
+                                        st.error(message)
+                        
+                        with col2:
+                            if st.button("Download CSV"):
+                                csv_content = download_csv_from_github(repo_owner, repo_name, file_path)
+                                if csv_content:
+                                    st.download_button(
+                                        label="Click to Download",
+                                        data=csv_content,
+                                        file_name="downloaded_file.csv",
+                                        mime="text/csv"
+                                    )
                                 else:
-                                    st.error(message)
+                                    st.error("Failed to download the file")
                     else:
                         st.error("The selected file is not a valid CSV or could not be parsed.")
                 else:
